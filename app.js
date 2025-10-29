@@ -17,6 +17,8 @@ let currentWebcamClass = null; // Track which class is using webcam
 let webcamStream = null; // Store webcam stream
 let predictWebcamStream = null; // Store prediction webcam stream
 let predictWebcamInterval = null; // Interval for continuous prediction
+let autoCaptureInterval = null; // Interval for auto-capture from webcam
+let isAutoCapturing = false; // Track if auto-capture is active
 
 // ===================================
 // Initialization on Page Load
@@ -255,6 +257,15 @@ function initializeEventListeners() {
     document.querySelector('.btn-close-modal').addEventListener('click', closeWebcamModal);
     document.getElementById('captureBtn').addEventListener('click', captureFromWebcam);
     document.getElementById('stopWebcamBtn').addEventListener('click', closeWebcamModal);
+    
+    // Auto-capture toggle
+    document.getElementById('autoCaptureToggle').addEventListener('change', (e) => {
+        if (e.target.checked) {
+            startAutoCapture();
+        } else {
+            stopAutoCapture();
+        }
+    });
     
     // Prediction mode toggles
     document.getElementById('uploadPredictBtn').addEventListener('click', () => switchPredictionMode('upload'));
@@ -508,6 +519,15 @@ async function captureFromWebcam() {
 function closeWebcamModal() {
     const modal = document.getElementById('webcamModal');
     const video = document.getElementById('webcam');
+    const toggle = document.getElementById('autoCaptureToggle');
+    
+    // Stop auto-capture if active
+    stopAutoCapture();
+    
+    // Uncheck auto-capture toggle
+    if (toggle) {
+        toggle.checked = false;
+    }
     
     // Stop webcam stream
     if (webcamStream) {
@@ -520,6 +540,42 @@ function closeWebcamModal() {
     currentWebcamClass = null;
     
     console.log('📷 Webcam stopped');
+}
+
+// ===================================
+// Auto-Capture Functions
+// ===================================
+
+function startAutoCapture() {
+    if (isAutoCapturing) return;
+    
+    const intervalSelect = document.getElementById('captureInterval');
+    const interval = parseInt(intervalSelect.value);
+    
+    isAutoCapturing = true;
+    
+    // Capture immediately when starting
+    captureFromWebcam();
+    
+    // Then capture at regular intervals
+    autoCaptureInterval = setInterval(() => {
+        captureFromWebcam();
+    }, interval);
+    
+    console.log(`🤖 Auto-capture started (interval: ${interval}ms)`);
+}
+
+function stopAutoCapture() {
+    if (!isAutoCapturing) return;
+    
+    if (autoCaptureInterval) {
+        clearInterval(autoCaptureInterval);
+        autoCaptureInterval = null;
+    }
+    
+    isAutoCapturing = false;
+    
+    console.log('🛑 Auto-capture stopped');
 }
 
 // ===================================
