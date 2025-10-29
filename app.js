@@ -359,6 +359,11 @@ async function processImage(file, classId) {
 // ===================================
 
 async function extractFeatures(imageElement) {
+    // Check if MobileNet is loaded
+    if (!mobilenet) {
+        throw new Error('MobileNet model is not loaded yet. Please wait for initialization.');
+    }
+    
     // Use MobileNet to extract features (activations from intermediate layer)
     // This uses transfer learning - we get rich feature representations
     const activation = mobilenet.infer(imageElement, 'conv_preds');
@@ -682,6 +687,12 @@ function removeClass(classId) {
 function checkTrainingReady() {
     const trainBtn = document.getElementById('trainBtn');
     
+    // Check if MobileNet is loaded
+    if (!mobilenet) {
+        trainBtn.disabled = true;
+        return;
+    }
+    
     // Check if we have at least 2 classes with images
     const validClasses = classData.filter(c => c !== null && c.images.length > 0);
     
@@ -698,6 +709,13 @@ function checkTrainingReady() {
 
 async function trainModel() {
     if (isTraining) return;
+    
+    // Check if MobileNet is loaded
+    if (!mobilenet) {
+        alert('يجب تحميل نموذج MobileNet أولاً. يرجى الانتظار حتى يظهر "النموذج جاهز للاستخدام" أو إعادة تحميل الصفحة.');
+        console.error('❌ Cannot train: MobileNet not loaded');
+        return;
+    }
     
     isTraining = true;
     isTrained = false;
