@@ -25,17 +25,9 @@ let predictWebcamInterval = null; // Interval for continuous prediction
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('🚀 Initializing Teachable Machine App...');
     
-    // Set TensorFlow.js backend to CPU if WebGL is not available
+    // Initialize TensorFlow.js backend with proper fallback
     // This ensures compatibility with all devices and environments
-    try {
-        await tf.setBackend('webgl');
-        console.log('✅ Using WebGL backend');
-    } catch (error) {
-        console.log('⚠️ WebGL not available, falling back to CPU backend');
-        await tf.setBackend('cpu');
-    }
-    await tf.ready();
-    console.log(`📊 TensorFlow.js backend: ${tf.getBackend()}`);
+    await initializeTensorFlowBackend();
     
     // Load MobileNet model
     await loadMobileNet();
@@ -51,6 +43,92 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     console.log('✅ App initialized successfully');
 });
+
+// ===================================
+// Initialize TensorFlow.js Backend with Fallback
+// ===================================
+
+async function initializeTensorFlowBackend() {
+    console.log('🔧 Initializing TensorFlow.js backend...');
+    
+    // Force CPU backend for Replit environment to avoid WebGL issues
+    // Replit's headless environment doesn't support WebGL properly
+    const forceCPU = true;
+    
+    if (forceCPU) {
+        console.log('🔒 Forcing CPU backend for compatibility...');
+        try {
+            await tf.setBackend('cpu');
+            await tf.ready();
+            
+            // Test CPU backend with a more complex operation
+            const testTensor = tf.tensor2d([[1, 2], [3, 4]]);
+            const testResult = testTensor.square().sum();
+            const value = await testResult.data();
+            testTensor.dispose();
+            testResult.dispose();
+            
+            console.log('✅ Using CPU backend');
+            console.log(`📊 TensorFlow.js backend: ${tf.getBackend()}`);
+            console.log(`📊 Backend test result: ${value[0]} (expected: 30)`);
+            return;
+            
+        } catch (error) {
+            console.error('❌ CPU backend initialization failed:', error);
+            alert('فشل تهيئة TensorFlow.js. يرجى إعادة تحميل الصفحة.');
+            throw error;
+        }
+    }
+    
+    // Try WebGL first (for desktop/mobile browsers)
+    try {
+        await tf.setBackend('webgl');
+        await tf.ready();
+        
+        // Test if WebGL actually works with multiple operations
+        const testTensor = tf.tensor2d([[1, 2], [3, 4]]);
+        const testResult = testTensor.square().sum();
+        const value = await testResult.data();
+        testTensor.dispose();
+        testResult.dispose();
+        
+        if (value[0] !== 30) {
+            throw new Error('WebGL test failed - incorrect result');
+        }
+        
+        console.log('✅ Using WebGL backend (GPU acceleration)');
+        console.log(`📊 TensorFlow.js backend: ${tf.getBackend()}`);
+        console.log(`📊 Backend test result: ${value[0]} (expected: 30)`);
+        return;
+        
+    } catch (error) {
+        console.log('⚠️ WebGL backend failed:', error.message);
+        console.log('🔄 Switching to CPU backend...');
+    }
+    
+    // Fall back to CPU if WebGL fails
+    try {
+        await tf.setBackend('cpu');
+        await tf.ready();
+        
+        // Test CPU backend
+        const testTensor = tf.tensor2d([[1, 2], [3, 4]]);
+        const testResult = testTensor.square().sum();
+        const value = await testResult.data();
+        testTensor.dispose();
+        testResult.dispose();
+        
+        console.log('✅ Using CPU backend');
+        console.log(`📊 TensorFlow.js backend: ${tf.getBackend()}`);
+        console.log(`📊 Backend test result: ${value[0]} (expected: 30)`);
+        return;
+        
+    } catch (error) {
+        console.error('❌ Failed to initialize TensorFlow.js backend:', error);
+        alert('فشل تهيئة TensorFlow.js. يرجى إعادة تحميل الصفحة.');
+        throw error;
+    }
+}
 
 // ===================================
 // Load Pre-trained MobileNet Model
