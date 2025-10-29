@@ -503,19 +503,21 @@ section {
     background: var(--bg-secondary);
     border-radius: var(--radius-lg);
     width: 100%;
-    max-width: 600px;
-    max-height: 90vh;
-    overflow-y: auto;
+    max-width: 550px;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
     box-shadow: var(--shadow-lg);
     border: 2px solid var(--accent-primary);
 }
 
 .modal-header {
-    padding: var(--spacing-md) var(--spacing-lg);
+    padding: var(--spacing-sm) var(--spacing-md);
     border-bottom: 2px solid var(--border-color);
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-shrink: 0;
 }
 
 .modal-header h3 {
@@ -544,12 +546,15 @@ section {
 }
 
 .modal-body {
-    padding: var(--spacing-lg);
+    padding: var(--spacing-md);
+    max-height: 60vh;
+    overflow-y: auto;
 }
 
 .webcam-feed {
     width: 100%;
-    max-height: 400px;
+    max-height: 280px;
+    height: auto;
     object-fit: cover;
     border-radius: var(--radius-md);
     background: var(--bg-primary);
@@ -557,12 +562,14 @@ section {
 }
 
 .modal-footer {
-    padding: var(--spacing-md) var(--spacing-lg);
+    padding: var(--spacing-sm) var(--spacing-md);
     border-top: 2px solid var(--border-color);
     display: flex;
-    gap: var(--spacing-md);
+    gap: var(--spacing-sm);
     flex-wrap: wrap;
     align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
 }
 
 .capture-info {
@@ -579,14 +586,14 @@ section {
 
 /* Auto Capture Controls */
 .auto-capture-controls {
-    margin-top: var(--spacing-md);
-    padding: var(--spacing-md);
+    margin-top: var(--spacing-sm);
+    padding: var(--spacing-sm);
     background: var(--bg-tertiary);
     border-radius: var(--radius-md);
     border: 2px solid var(--border-color);
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-sm);
+    gap: var(--spacing-xs);
 }
 
 .auto-capture-toggle {
