@@ -25,6 +25,18 @@ let predictWebcamInterval = null; // Interval for continuous prediction
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('🚀 Initializing Teachable Machine App...');
     
+    // Set TensorFlow.js backend to CPU if WebGL is not available
+    // This ensures compatibility with all devices and environments
+    try {
+        await tf.setBackend('webgl');
+        console.log('✅ Using WebGL backend');
+    } catch (error) {
+        console.log('⚠️ WebGL not available, falling back to CPU backend');
+        await tf.setBackend('cpu');
+    }
+    await tf.ready();
+    console.log(`📊 TensorFlow.js backend: ${tf.getBackend()}`);
+    
     // Load MobileNet model
     await loadMobileNet();
     
@@ -52,7 +64,8 @@ async function loadMobileNet() {
         console.log('📥 Loading MobileNet model...');
         
         // Load MobileNet v2 model (for feature extraction)
-        mobilenet = await mobilenet.load({
+        // Access the global mobilenet module from the CDN
+        mobilenet = await window.mobilenet.load({
             version: 2,
             alpha: 1.0 // Use full model for better accuracy
         });
