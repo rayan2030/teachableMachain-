@@ -56,28 +56,49 @@ document.addEventListener('DOMContentLoaded', async () => {
 // Load Pre-trained MobileNet Model
 // ===================================
 
-async function loadMobileNet() {
+async function loadMobileNet(retries = 3) {
     const statusElement = document.getElementById('modelStatus');
     
-    try {
-        statusElement.textContent = 'جاري تحميل نموذج MobileNet...';
-        console.log('📥 Loading MobileNet model...');
-        
-        // Load MobileNet v2 model (for feature extraction)
-        // Access the global mobilenet module from the CDN
-        mobilenet = await window.mobilenet.load({
-            version: 2,
-            alpha: 1.0 // Use full model for better accuracy
-        });
-        
-        statusElement.textContent = 'النموذج جاهز للاستخدام ✓';
-        statusElement.classList.add('ready');
-        console.log('✅ MobileNet loaded successfully');
-        
-    } catch (error) {
-        console.error('❌ Error loading MobileNet:', error);
-        statusElement.textContent = 'خطأ في تحميل النموذج';
-        statusElement.style.color = 'var(--error)';
+    for (let attempt = 1; attempt <= retries; attempt++) {
+        try {
+            statusElement.textContent = `جاري تحميل نموذج MobileNet... (${attempt}/${retries})`;
+            console.log(`📥 Loading MobileNet model (attempt ${attempt}/${retries})...`);
+            
+            // Check if mobilenet library is loaded
+            if (!window.mobilenet) {
+                throw new Error('MobileNet library not loaded from CDN');
+            }
+            
+            // Load MobileNet v2 model (for feature extraction)
+            mobilenet = await window.mobilenet.load({
+                version: 2,
+                alpha: 1.0 // Use full model for better accuracy
+            });
+            
+            statusElement.textContent = 'النموذج جاهز للاستخدام ✓';
+            statusElement.classList.add('ready');
+            statusElement.classList.remove('training');
+            console.log('✅ MobileNet loaded successfully');
+            return; // Success - exit function
+            
+        } catch (error) {
+            console.error(`❌ Error loading MobileNet (attempt ${attempt}):`, error);
+            
+            if (attempt === retries) {
+                // Last attempt failed
+                statusElement.textContent = 'خطأ في تحميل النموذج - يرجى إعادة تحميل الصفحة';
+                statusElement.style.color = 'var(--error)';
+                statusElement.classList.remove('ready', 'training');
+                
+                // Show user-friendly error message
+                alert('فشل تحميل نموذج التعلم الآلي. يرجى:\n1. التحقق من اتصال الإنترنت\n2. إعادة تحميل الصفحة (F5)\n3. تجربة متصفح آخر إذا استمرت المشكلة');
+            } else {
+                // Wait before retrying (exponential backoff)
+                const waitTime = 1000 * attempt; // 1s, 2s, 3s
+                console.log(`⏳ Retrying in ${waitTime}ms...`);
+                await new Promise(resolve => setTimeout(resolve, waitTime));
+            }
+        }
     }
 }
 
