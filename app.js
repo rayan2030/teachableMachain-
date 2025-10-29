@@ -786,10 +786,24 @@ async function trainModel() {
         
     } catch (error) {
         console.error('❌ Training error:', error);
+        console.error('Error details:', error.message);
         isTraining = false;
-        progressText.textContent = 'حدث خطأ أثناء التدريب';
+        trainBtn.disabled = false;
+        
+        // More descriptive error message
+        let errorMsg = 'حدث خطأ أثناء التدريب';
+        if (error.message.includes('MobileNet')) {
+            errorMsg = 'خطأ: نموذج MobileNet غير جاهز. يرجى إعادة تحميل الصفحة';
+        } else if (error.message.includes('shape') || error.message.includes('dimension')) {
+            errorMsg = 'خطأ في معالجة الصور. تأكد من إضافة صور صحيحة';
+        }
+        
+        progressText.textContent = errorMsg;
         statusElement.textContent = 'خطأ في التدريب';
         statusElement.classList.remove('training');
+        
+        // Show alert with more details
+        alert(`${errorMsg}\n\nتفاصيل الخطأ: ${error.message}\n\nجرّب:\n1. إعادة تحميل الصفحة (F5)\n2. التأكد من إضافة 5+ صور لكل فئة\n3. الانتظار حتى يظهر "النموذج جاهز للاستخدام"`);
     }
 }
 
