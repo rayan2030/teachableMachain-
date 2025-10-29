@@ -369,12 +369,14 @@ async function extractFeatures(imageElement) {
     
     // Use MobileNet to extract features (activations from intermediate layer)
     // This uses transfer learning - we get rich feature representations
-    // mobilenet.infer returns shape [1, 7, 7, 1280] for v2 alpha=1.0
-    const activation = mobilenet.infer(imageElement, 'conv_preds');
+    // Use 'true' to get embeddings before the final classification layer
+    // This gives us shape [1, 1280] which is the pooled features
+    const activation = mobilenet.infer(imageElement, true);
     
-    console.log(`🔍 Activation shape from MobileNet: [${activation.shape.join(', ')}]`);
+    console.log(`🔍 Feature shape from MobileNet: [${activation.shape.join(', ')}]`);
     
-    // Remove batch dimension: [1, 7, 7, 1280] -> [7, 7, 1280]
+    // MobileNet.infer with 'true' returns [1, 1280] (already pooled)
+    // Remove batch dimension: [1, 1280] -> [1280]
     const squeezed = activation.squeeze([0]);
     
     console.log(`🔍 After squeeze: [${squeezed.shape.join(', ')}]`);
@@ -844,12 +846,9 @@ function prepareTrainingData() {
                 return;
             }
             
-            // Check if feature has correct shape [7, 7, 1280]
-            if (feature.shape.length !== 3 || 
-                feature.shape[0] !== 7 || 
-                feature.shape[1] !== 7 || 
-                feature.shape[2] !== 1280) {
-                console.error(`❌ شكل الميزة خاطئ: [${feature.shape.join(', ')}] - المتوقع [7, 7, 1280]`);
+            // Check if feature has correct shape [1280]
+            if (feature.shape.length !== 1 || feature.shape[0] !== 1280) {
+                console.error(`❌ شكل الميزة خاطئ: [${feature.shape.join(', ')}] - المتوقع [1280]`);
                 console.error(`سيتم تخطي هذه الميزة. يرجى مسح البيانات وإعادة إضافة الصور.`);
                 return;
             }
@@ -884,16 +883,15 @@ function prepareTrainingData() {
 function buildModel(inputShape) {
     const model = tf.sequential();
     
-    // Flatten the input features
-    // MobileNet v2 with alpha=1.0 produces features of shape [7, 7, 1280]
-    model.add(tf.layers.flatten({ inputShape: [7, 7, 1280] }));
-    
-    // Dense hidden layer with dropout for regularization
+    // Input layer for pooled MobileNet features
+    // MobileNet.infer with 'true' produces features of shape [1280]
     model.add(tf.layers.dense({
+        inputShape: [1280],
         units: 128,
         activation: 'relu',
         kernelInitializer: 'heNormal'
     }));
+    
     model.add(tf.layers.dropout({ rate: 0.5 }));
     
     // Output layer (number of classes)

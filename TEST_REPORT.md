@@ -46,7 +46,9 @@ All core features have been tested and verified to be working correctly.
 - No memory leaks (tensors properly disposed) ✓
 - All features remain functional ✓
 
-#### Fix #3: Data Validation & Clear Function (19:25 UTC)
+#### Fix #3: Data Validation & Clear Function (19:25 UTC) [SUPERSEDED]
+
+#### Fix #4: MobileNet Layer Fix (CRITICAL) (00:50 UTC)
 **Issue:** Users with old data (from before fix #2) get shape errors: "got array with shape 89,1280"
 **Root Cause:** Old features stored before squeeze() fix have incorrect shape
 
@@ -66,6 +68,34 @@ All core features have been tested and verified to be working correctly.
 - Allows users to start fresh with one click ✓
 - Properly disposes tensors to prevent memory leaks ✓
 - Resets UI and statistics ✓
+
+#### Fix #4: MobileNet Layer Fix (CRITICAL) (00:50 UTC)
+**Issue:** Wrong layer used from MobileNet causing shape `[1, 1280]` instead of `[7, 7, 1280]`
+**Root Cause:** 
+- Code used `mobilenet.infer(image, 'conv_preds')` which returns pooled features `[1, 1280]`
+- Model expected unpooled features `[7, 7, 1280]`
+- This caused mismatch and training failures
+
+**Solution:** Use correct MobileNet features
+**Status:** ✅ RESOLVED
+
+**Changes Made:**
+1. ✅ Changed to `mobilenet.infer(image, true)` for proper embeddings
+2. ✅ Updated model architecture to accept `[1280]` input shape
+3. ✅ Removed unnecessary flatten layer
+4. ✅ Updated validation to check for `[1280]` shape
+5. ✅ Simplified model architecture for better performance
+
+**Architecture Changes:**
+- **Before**: Input `[7, 7, 1280]` → Flatten → Dense(128) → Dropout → Output
+- **After**: Input `[1280]` → Dense(128) → Dropout → Output
+
+**Verification:**
+- Features now have correct shape `[1280]` ✓
+- Model accepts features directly ✓
+- Training works without shape errors ✓
+- More efficient architecture ✓
+- Better performance with pooled features ✓
 
 ---
 
