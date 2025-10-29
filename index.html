@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>آلة التعلم القابلة للتعليم - Teachable Machine</title>
+    <meta name="description" content="تطبيق تعلم آلي في المتصفح باستخدام TensorFlow.js">
+    <link rel="stylesheet" href="style.css">
+    <!-- TensorFlow.js Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.11.0/dist/tf.min.js"></script>
+    <!-- MobileNet Pre-trained Model -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.0/dist/mobilenet.min.js"></script>
+</head>
+<body>
+    <!-- Header Section -->
+    <header class="header">
+        <div class="logo-container">
+            <div class="logo">
+                <svg width="50" height="50" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="25" cy="25" r="20" fill="#00D9FF" opacity="0.2"/>
+                    <path d="M25 10 L40 25 L25 40 L10 25 Z" fill="#00D9FF"/>
+                    <circle cx="25" cy="25" r="8" fill="#1a1a2e"/>
+                </svg>
+            </div>
+            <h1 class="title">آلة التعلم الذكية</h1>
+        </div>
+        <div class="status-indicator">
+            <span id="modelStatus" class="status-text">جاري تحميل النموذج...</span>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="container">
+        <!-- Introduction Section -->
+        <section class="intro-section">
+            <h2>تدريب نموذج التعرف على الصور</h2>
+            <p class="description">
+                قم بتدريب نموذج ذكاء اصطناعي مخصص في متصفحك بدون الحاجة لخادم أو برمجة. 
+                أضف صورًا لكل فئة، ثم درّب النموذج واستخدمه للتنبؤ الفوري!
+            </p>
+        </section>
+
+        <!-- Training Section -->
+        <section class="training-section">
+            <h3 class="section-title">
+                <span class="icon">📚</span>
+                إضافة بيانات التدريب
+            </h3>
+            
+            <!-- Classes Container -->
+            <div id="classesContainer" class="classes-container">
+                <!-- Class 1 -->
+                <div class="class-card" data-class-id="0">
+                    <div class="class-header">
+                        <input type="text" class="class-name-input" value="الفئة 1" placeholder="اسم الفئة">
+                        <button class="btn-remove-class" title="حذف الفئة">×</button>
+                    </div>
+                    <div class="upload-area" data-class-id="0">
+                        <input type="file" id="fileInput0" class="file-input" accept="image/*" multiple>
+                        <label for="fileInput0" class="upload-label">
+                            <span class="upload-icon">📁</span>
+                            <span>اسحب الصور هنا أو انقر للتحميل</span>
+                        </label>
+                    </div>
+                    <div class="webcam-controls">
+                        <button class="btn-secondary btn-webcam" data-class-id="0">
+                            <span>📷</span> التقاط من الكاميرا
+                        </button>
+                    </div>
+                    <div class="images-preview" data-class-id="0"></div>
+                    <div class="image-count">
+                        <span class="count-label">عدد الصور:</span>
+                        <span class="count-number" data-class-id="0">0</span>
+                    </div>
+                </div>
+
+                <!-- Class 2 -->
+                <div class="class-card" data-class-id="1">
+                    <div class="class-header">
+                        <input type="text" class="class-name-input" value="الفئة 2" placeholder="اسم الفئة">
+                        <button class="btn-remove-class" title="حذف الفئة">×</button>
+                    </div>
+                    <div class="upload-area" data-class-id="1">
+                        <input type="file" id="fileInput1" class="file-input" accept="image/*" multiple>
+                        <label for="fileInput1" class="upload-label">
+                            <span class="upload-icon">📁</span>
+                            <span>اسحب الصور هنا أو انقر للتحميل</span>
+                        </label>
+                    </div>
+                    <div class="webcam-controls">
+                        <button class="btn-secondary btn-webcam" data-class-id="1">
+                            <span>📷</span> التقاط من الكاميرا
+                        </button>
+                    </div>
+                    <div class="images-preview" data-class-id="1"></div>
+                    <div class="image-count">
+                        <span class="count-label">عدد الصور:</span>
+                        <span class="count-number" data-class-id="1">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add Class Button -->
+            <button id="addClassBtn" class="btn-add-class">
+                <span>➕</span> إضافة فئة جديدة
+            </button>
+
+            <!-- Training Controls -->
+            <div class="training-controls">
+                <button id="trainBtn" class="btn-primary" disabled>
+                    <span class="btn-icon">🚀</span>
+                    <span class="btn-text">بدء التدريب</span>
+                </button>
+                <div id="trainingProgress" class="training-progress hidden">
+                    <div class="progress-bar">
+                        <div id="progressFill" class="progress-fill"></div>
+                    </div>
+                    <p id="progressText" class="progress-text">جاري التدريب...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Webcam Modal -->
+        <div id="webcamModal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>التقاط الصور من الكاميرا</h3>
+                    <button class="btn-close-modal">×</button>
+                </div>
+                <div class="modal-body">
+                    <video id="webcam" class="webcam-feed" autoplay playsinline></video>
+                    <canvas id="webcamCanvas" class="hidden"></canvas>
+                </div>
+                <div class="modal-footer">
+                    <button id="captureBtn" class="btn-primary">
+                        <span>📸</span> التقاط صورة
+                    </button>
+                    <button id="stopWebcamBtn" class="btn-secondary">إغلاق الكاميرا</button>
+                    <p class="capture-info">تم التقاط <span id="captureCount">0</span> صورة</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Prediction Section -->
+        <section class="prediction-section">
+            <h3 class="section-title">
+                <span class="icon">🔮</span>
+                التنبؤ والتصنيف
+            </h3>
+            
+            <div class="prediction-container">
+                <div class="prediction-input">
+                    <div class="prediction-modes">
+                        <button id="uploadPredictBtn" class="btn-mode active">
+                            📁 رفع صورة
+                        </button>
+                        <button id="webcamPredictBtn" class="btn-mode">
+                            📷 كاميرا مباشرة
+                        </button>
+                    </div>
+
+                    <!-- Upload Mode -->
+                    <div id="uploadPredictArea" class="predict-upload-area">
+                        <input type="file" id="predictFileInput" class="file-input" accept="image/*">
+                        <label for="predictFileInput" class="upload-label">
+                            <span class="upload-icon">🖼️</span>
+                            <span>اختر صورة للتنبؤ</span>
+                        </label>
+                        <img id="predictImage" class="predict-image hidden" alt="صورة التنبؤ">
+                    </div>
+
+                    <!-- Webcam Mode -->
+                    <div id="webcamPredictArea" class="predict-webcam-area hidden">
+                        <video id="predictWebcam" class="webcam-feed" autoplay playsinline></video>
+                        <canvas id="predictCanvas" class="hidden"></canvas>
+                        <button id="startPredictWebcam" class="btn-primary">تشغيل الكاميرا</button>
+                        <button id="stopPredictWebcam" class="btn-secondary hidden">إيقاف الكاميرا</button>
+                    </div>
+                </div>
+
+                <!-- Predictions Results -->
+                <div class="prediction-results">
+                    <h4>نتائج التنبؤ</h4>
+                    <div id="predictionsDisplay" class="predictions-display">
+                        <p class="no-prediction">قم بتدريب النموذج أولاً ثم اختر صورة للتنبؤ</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Model Export Section -->
+        <section class="export-section">
+            <h3 class="section-title">
+                <span class="icon">💾</span>
+                تصدير النموذج
+            </h3>
+            <div class="export-container">
+                <p class="export-description">
+                    احفظ النموذج المدرب لاستخدامه لاحقاً أو في تطبيقات أخرى
+                </p>
+                <button id="exportBtn" class="btn-primary" disabled>
+                    <span>⬇️</span> تحميل النموذج (.json + .bin)
+                </button>
+                <div id="exportStatus" class="export-status hidden"></div>
+            </div>
+        </section>
+
+        <!-- Statistics Section -->
+        <section class="stats-section">
+            <h3 class="section-title">
+                <span class="icon">📊</span>
+                إحصائيات النموذج
+            </h3>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">عدد الفئات</div>
+                    <div class="stat-value" id="statClasses">2</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">إجمالي الصور</div>
+                    <div class="stat-value" id="statImages">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">حالة التدريب</div>
+                    <div class="stat-value" id="statStatus">غير مدرب</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">دقة النموذج</div>
+                    <div class="stat-value" id="statAccuracy">-</div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>مدعوم بـ TensorFlow.js | التعلم الآلي في المتصفح بدون خادم</p>
+    </footer>
+
+    <!-- App Script -->
+    <script src="app.js"></script>
+</body>
+</html>
