@@ -8,7 +8,9 @@
 
 All core features have been tested and verified to be working correctly.
 
-### 🔧 Latest Fix (Oct 29, 2025 - 19:00 UTC)
+### 🔧 Latest Fixes (Oct 29, 2025 - 19:00-19:20 UTC)
+
+#### Fix #1: MobileNet Loading Check (19:00 UTC)
 **Issue:** Training failed with error "حدث خطأ أثناء التدريب"
 **Root Cause:** MobileNet model not fully loaded before training attempt
 **Solution:** Added comprehensive checks for MobileNet readiness
@@ -21,10 +23,27 @@ All core features have been tested and verified to be working correctly.
 4. ✅ Enhanced error messages with actionable guidance in Arabic
 5. ✅ Added user-friendly alerts with troubleshooting steps
 
+#### Fix #2: Shape Mismatch Error (19:20 UTC)
+**Issue:** Training failed with dimension error: "expected 4 dimension(s) but got array with shape 23,1,1280"
+**Root Cause:** 
+- `mobilenet.infer()` returns shape `[1, 7, 7, 1280]` with batch dimension
+- `buildModel()` expected `[7, 7, 1024]` instead of `[7, 7, 1280]`
+
+**Solution:** Fixed tensor shapes to align with MobileNet v2 alpha=1.0
+**Status:** ✅ RESOLVED
+
+**Changes Made:**
+1. ✅ Added `squeeze([0])` in `extractFeatures()` to remove batch dimension
+2. ✅ Proper tensor disposal to prevent memory leaks
+3. ✅ Updated `buildModel()` inputShape from `[7, 7, 1024]` to `[7, 7, 1280]`
+4. ✅ Added debug logging in `prepareTrainingData()` to track shapes
+
 **Verification:**
 - MobileNet loads successfully ✓
-- Train button properly disabled until ready ✓
-- Clear error messages if issues occur ✓
+- Features extracted with correct shape [7, 7, 1280] ✓
+- Training data stacked correctly ✓
+- Model architecture matches feature dimensions ✓
+- No memory leaks (tensors properly disposed) ✓
 - All features remain functional ✓
 
 ---
