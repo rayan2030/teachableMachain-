@@ -250,6 +250,9 @@ function initializeEventListeners() {
     // Train button
     document.getElementById('trainBtn').addEventListener('click', trainModel);
     
+    // Clear all data button
+    document.getElementById('clearAllBtn').addEventListener('click', clearAllData);
+    
     // Export button
     document.getElementById('exportBtn').addEventListener('click', exportModel);
     
@@ -369,8 +372,12 @@ async function extractFeatures(imageElement) {
     // mobilenet.infer returns shape [1, 7, 7, 1280] for v2 alpha=1.0
     const activation = mobilenet.infer(imageElement, 'conv_preds');
     
+    console.log(`🔍 Activation shape from MobileNet: [${activation.shape.join(', ')}]`);
+    
     // Remove batch dimension: [1, 7, 7, 1280] -> [7, 7, 1280]
     const squeezed = activation.squeeze([0]);
+    
+    console.log(`🔍 After squeeze: [${squeezed.shape.join(', ')}]`);
     
     // Clean up the original tensor
     activation.dispose();
@@ -831,6 +838,22 @@ function prepareTrainingData() {
         classNames.push(classItem.name);
         
         classItem.features.forEach(feature => {
+            // Validate feature shape before adding
+            if (!feature || !feature.shape) {
+                console.error(`❌ ميزة غير صالحة تم اكتشافها للفئة ${classIndex}`);
+                return;
+            }
+            
+            // Check if feature has correct shape [7, 7, 1280]
+            if (feature.shape.length !== 3 || 
+                feature.shape[0] !== 7 || 
+                feature.shape[1] !== 7 || 
+                feature.shape[2] !== 1280) {
+                console.error(`❌ شكل الميزة خاطئ: [${feature.shape.join(', ')}] - المتوقع [7, 7, 1280]`);
+                console.error(`سيتم تخطي هذه الميزة. يرجى مسح البيانات وإعادة إضافة الصور.`);
+                return;
+            }
+            
             features.push(feature);
             labels.push(classIndex);
         });
@@ -840,6 +863,8 @@ function prepareTrainingData() {
     if (features.length > 0) {
         console.log(`📊 First feature shape: [${features[0].shape.join(', ')}]`);
         console.log(`📊 Total features: ${features.length}`);
+    } else {
+        throw new Error('لم يتم العثور على ميزات صالحة. يرجى مسح البيانات وإعادة إضافة صور جديدة.');
     }
     
     // Convert to tensors
@@ -1052,6 +1077,72 @@ function displayPrediction(results) {
         
         container.appendChild(item);
     });
+}
+
+// ===================================
+// Clear All Data
+// ===================================
+
+function clearAllData() {
+    // Confirmation dialog
+    const confirmed = confirm('⚠️ هل أنت متأكد من مسح جميع البيانات؟\n\nسيتم حذف:\n- جميع الصور المضافة\n- جميع البيانات المستخرجة\n- النموذج المدرب (إن وُجد)\n\nهذا الإجراء لا يمكن التراجع عنه!');
+    
+    if (!confirmed) {
+        return;
+    }
+    
+    console.log('🗑️ Clearing all data...');
+    
+    // Dispose all stored features to free memory
+    classData.forEach(classItem => {
+        if (classItem && classItem.features) {
+            classItem.features.forEach(feature => {
+                if (feature && feature.dispose) {
+                    feature.dispose();
+                }
+            });
+        }
+    });
+    
+    // Reset all class data
+    classData.forEach((classItem, index) => {
+        if (classItem) {
+            classItem.images = [];
+            classItem.features = [];
+        }
+    });
+    
+    // Dispose model if exists
+    if (model) {
+        model.dispose();
+        model = null;
+    }
+    
+    // Reset flags
+    isTrained = false;
+    
+    // Update UI
+    document.querySelectorAll('.images-preview').forEach(preview => {
+        preview.innerHTML = '';
+    });
+    
+    document.querySelectorAll('.count-number').forEach(count => {
+        count.textContent = '0';
+    });
+    
+    document.getElementById('trainBtn').disabled = true;
+    document.getElementById('exportBtn').disabled = true;
+    
+    // Reset statistics
+    updateStatistics();
+    
+    // Hide training progress
+    document.getElementById('trainingProgress').classList.add('hidden');
+    document.getElementById('modelStatus').textContent = 'غير مدرب';
+    document.getElementById('modelStatus').classList.remove('ready', 'training');
+    
+    console.log('✅ All data cleared successfully');
+    alert('✅ تم مسح جميع البيانات بنجاح!\n\nيمكنك الآن البدء من جديد بإضافة صور جديدة.');
 }
 
 // ===================================

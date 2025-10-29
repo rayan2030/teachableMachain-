@@ -46,6 +46,27 @@ All core features have been tested and verified to be working correctly.
 - No memory leaks (tensors properly disposed) ✓
 - All features remain functional ✓
 
+#### Fix #3: Data Validation & Clear Function (19:25 UTC)
+**Issue:** Users with old data (from before fix #2) get shape errors: "got array with shape 89,1280"
+**Root Cause:** Old features stored before squeeze() fix have incorrect shape
+
+**Solution:** Added validation and clear data function
+**Status:** ✅ RESOLVED
+
+**Changes Made:**
+1. ✅ Added detailed logging in `extractFeatures()` to show tensor shapes
+2. ✅ Added shape validation in `prepareTrainingData()` to skip invalid features
+3. ✅ Added "Clear All Data" button (🗑️ مسح جميع البيانات)
+4. ✅ Implemented `clearAllData()` function with proper tensor disposal
+5. ✅ Added confirmation dialog before clearing data
+
+**Features:**
+- Validates all features have correct shape [7, 7, 1280] ✓
+- Skips invalid features with clear error messages ✓
+- Allows users to start fresh with one click ✓
+- Properly disposes tensors to prevent memory leaks ✓
+- Resets UI and statistics ✓
+
 ---
 
 ## 📊 Test Summary
