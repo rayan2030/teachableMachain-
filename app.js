@@ -117,8 +117,12 @@ function initializeEventListeners() {
     });
     
     // Webcam capture buttons
-    document.querySelectorAll('.btn-webcam').forEach((btn, index) => {
-        btn.addEventListener('click', () => openWebcamModal(index));
+    document.querySelectorAll('.btn-webcam').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const classId = parseInt(btn.dataset.classId);
+            console.log(`🎥 Opening webcam for class ${classId}`);
+            openWebcamModal(classId);
+        });
     });
     
     // Class name input listeners
