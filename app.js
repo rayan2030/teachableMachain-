@@ -320,7 +320,16 @@ async function openWebcamModal(classId) {
         });
         
         video.srcObject = webcamStream;
-        console.log('📷 Webcam started');
+        
+        // Wait for video to be ready before allowing capture
+        await new Promise((resolve) => {
+            video.onloadedmetadata = () => {
+                video.play();
+                resolve();
+            };
+        });
+        
+        console.log('📷 Webcam started and ready');
         
     } catch (error) {
         console.error('❌ Webcam access error:', error);
@@ -334,40 +343,63 @@ async function captureFromWebcam() {
     const canvas = document.getElementById('webcamCanvas');
     const captureCount = document.getElementById('captureCount');
     
-    // Set canvas dimensions to match video
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    // Check if video is ready
+    if (!video.videoWidth || !video.videoHeight) {
+        console.error('❌ Video not ready yet');
+        alert('الرجاء الانتظار حتى تصبح الكاميرا جاهزة');
+        return;
+    }
     
-    // Draw current video frame to canvas
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(video, 0, 0);
-    
-    // Convert canvas to data URL
-    const imageData = canvas.toDataURL('image/jpeg');
-    
-    // Create image element for processing
-    const img = new Image();
-    img.src = imageData;
-    
-    img.onload = async () => {
-        // Extract features
-        const features = await extractFeatures(img);
+    try {
+        // Set canvas dimensions to match video
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
         
-        // Store image and features
-        classData[currentWebcamClass].images.push(imageData);
-        classData[currentWebcamClass].features.push(features);
+        // Draw current video frame to canvas
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0);
         
-        // Update count
-        const currentCount = parseInt(captureCount.textContent);
-        captureCount.textContent = currentCount + 1;
+        // Convert canvas to data URL
+        const imageData = canvas.toDataURL('image/jpeg');
         
-        console.log(`📸 Captured image for class ${currentWebcamClass}`);
+        // Create image element for processing
+        const img = new Image();
+        img.src = imageData;
         
-        // Update display
-        updateClassDisplay(currentWebcamClass);
-        updateStatistics();
-        checkTrainingReady();
-    };
+        img.onload = async () => {
+            try {
+                // Extract features
+                const features = await extractFeatures(img);
+                
+                // Store image and features
+                classData[currentWebcamClass].images.push(imageData);
+                classData[currentWebcamClass].features.push(features);
+                
+                // Update count
+                const currentCount = parseInt(captureCount.textContent);
+                captureCount.textContent = currentCount + 1;
+                
+                console.log(`📸 Captured image ${currentCount + 1} for class ${currentWebcamClass}`);
+                
+                // Update display
+                updateClassDisplay(currentWebcamClass);
+                updateStatistics();
+                checkTrainingReady();
+            } catch (error) {
+                console.error('❌ Error processing capture:', error);
+                alert('حدث خطأ أثناء معالجة الصورة');
+            }
+        };
+        
+        img.onerror = () => {
+            console.error('❌ Error loading captured image');
+            alert('حدث خطأ في تحميل الصورة الملتقطة');
+        };
+        
+    } catch (error) {
+        console.error('❌ Capture error:', error);
+        alert('حدث خطأ أثناء التقاط الصورة');
+    }
 }
 
 function closeWebcamModal() {
@@ -706,17 +738,26 @@ async function startPredictionWebcam() {
         });
         
         video.srcObject = predictWebcamStream;
+        
+        // Wait for video to be ready
+        await new Promise((resolve) => {
+            video.onloadedmetadata = () => {
+                video.play();
+                resolve();
+            };
+        });
+        
         startBtn.classList.add('hidden');
         stopBtn.classList.remove('hidden');
         
         // Start continuous prediction
         predictWebcamInterval = setInterval(async () => {
-            if (isTrained) {
+            if (isTrained && video.videoWidth && video.videoHeight) {
                 await predictImage(video);
             }
         }, 500); // Predict every 500ms
         
-        console.log('📷 Prediction webcam started');
+        console.log('📷 Prediction webcam started and ready');
         
     } catch (error) {
         console.error('❌ Webcam error:', error);
