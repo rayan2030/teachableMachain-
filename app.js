@@ -366,8 +366,16 @@ async function extractFeatures(imageElement) {
     
     // Use MobileNet to extract features (activations from intermediate layer)
     // This uses transfer learning - we get rich feature representations
+    // mobilenet.infer returns shape [1, 7, 7, 1280] for v2 alpha=1.0
     const activation = mobilenet.infer(imageElement, 'conv_preds');
-    return activation;
+    
+    // Remove batch dimension: [1, 7, 7, 1280] -> [7, 7, 1280]
+    const squeezed = activation.squeeze([0]);
+    
+    // Clean up the original tensor
+    activation.dispose();
+    
+    return squeezed;
 }
 
 // ===================================
@@ -828,10 +836,17 @@ function prepareTrainingData() {
         });
     });
     
+    // Debug: Check first feature shape
+    if (features.length > 0) {
+        console.log(`📊 First feature shape: [${features[0].shape.join(', ')}]`);
+        console.log(`📊 Total features: ${features.length}`);
+    }
+    
     // Convert to tensors
     const xs = tf.stack(features);
     const ys = tf.oneHot(tf.tensor1d(labels, 'int32'), validClasses.length);
     
+    console.log(`📊 Training data shape: [${xs.shape.join(', ')}]`);
     console.log(`📊 Training data: ${xs.shape[0]} samples, ${validClasses.length} classes`);
     
     return { xs, ys, classNames };
@@ -845,7 +860,8 @@ function buildModel(inputShape) {
     const model = tf.sequential();
     
     // Flatten the input features
-    model.add(tf.layers.flatten({ inputShape: [7, 7, 1024] }));
+    // MobileNet v2 with alpha=1.0 produces features of shape [7, 7, 1280]
+    model.add(tf.layers.flatten({ inputShape: [7, 7, 1280] }));
     
     // Dense hidden layer with dropout for regularization
     model.add(tf.layers.dense({
