@@ -159,10 +159,11 @@ async function loadMobileNet(retries = 3) {
                 throw new Error('MobileNet library not loaded from CDN');
             }
             
-            // Load MobileNet v2 model (for feature extraction)
+            // Load MobileNet v1 model with alpha 0.25 (smaller, faster to load)
+            // This is lighter but still effective for transfer learning
             mobilenet = await window.mobilenet.load({
-                version: 2,
-                alpha: 1.0 // Use full model for better accuracy
+                version: 1,
+                alpha: 0.25 // Smaller model for faster loading
             });
             
             statusElement.textContent = 'النموذج جاهز للاستخدام ✓';
@@ -899,9 +900,9 @@ function buildModel(inputShape) {
     const model = tf.sequential();
     
     // Input layer for pooled MobileNet features
-    // MobileNet.infer with 'true' produces features of shape [1280]
+    // MobileNet v1 alpha=0.25 produces features of shape [256]
     model.add(tf.layers.dense({
-        inputShape: [1280],
+        inputShape: [256],
         units: 128,
         activation: 'relu',
         kernelInitializer: 'heNormal'
