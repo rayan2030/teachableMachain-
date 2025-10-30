@@ -170,7 +170,7 @@ Retry Logic: 3 attempts with exponential backoff
 ### UI Elements Verified
 | Element | Status | Notes |
 |---------|--------|-------|
-| Header | ✅ | "آلة التعلم الذكية" displayed |
+| Header | ✅ | "تعلم الآلة" displayed |
 | Status Bar | ✅ | Green with checkmark |
 | Class Cards | ✅ | 2 default classes showing |
 | Upload Areas | ✅ | Dashed borders visible |
