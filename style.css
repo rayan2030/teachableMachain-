@@ -2,6 +2,8 @@
    Global Styles & CSS Variables
    =================================== */
 
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
+
 * {
     margin: 0;
     padding: 0;
@@ -9,15 +11,15 @@
 }
 
 :root {
-    /* Dark Theme Color Palette */
-    --bg-primary: #0f0f1e;
-    --bg-secondary: #1a1a2e;
-    --bg-tertiary: #16213e;
-    --accent-primary: #00d9ff;
-    --accent-secondary: #6c5ce7;
+    /* New Modern Color Palette */
+    --bg-primary: #0D1117;
+    --bg-secondary: #161B22;
+    --bg-tertiary: #21262d;
+    --accent-primary: #3A8EF6;
+    --accent-secondary: #6C63FF;
     --text-primary: #ffffff;
-    --text-secondary: #b4b4b4;
-    --border-color: #2d2d44;
+    --text-secondary: #B0BEC5;
+    --border-color: #30363d;
     --success: #00ff88;
     --warning: #ffa500;
     --error: #ff4757;
@@ -31,24 +33,26 @@
     
     /* Border Radius */
     --radius-sm: 8px;
-    --radius-md: 12px;
-    --radius-lg: 16px;
+    --radius-md: 14px;
+    --radius-lg: 18px;
     
     /* Shadows */
     --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
-    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
-    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
-    --glow: 0 0 20px rgba(0, 217, 255, 0.3);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 8px 20px rgba(0, 0, 0, 0.6);
+    --glow: 0 0 20px rgba(58, 142, 246, 0.3);
+    --glow-secondary: 0 4px 12px rgba(108, 99, 255, 0.4);
 }
 
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+    font-family: 'Cairo', sans-serif;
+    background: var(--bg-primary);
     color: var(--text-primary);
     line-height: 1.6;
     min-height: 100vh;
     direction: rtl;
     overflow-x: hidden;
+    scroll-behavior: smooth;
 }
 
 /* ===================================
@@ -81,9 +85,9 @@ body {
 }
 
 .title {
-    font-size: 1.8rem;
+    font-size: 2.2rem;
     font-weight: 700;
-    background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+    background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -114,8 +118,18 @@ body {
 }
 
 @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.6; }
+    0% { 
+        opacity: 1;
+        color: var(--accent-secondary);
+    }
+    50% { 
+        opacity: 0.8;
+        color: var(--accent-primary);
+    }
+    100% { 
+        opacity: 1;
+        color: var(--accent-secondary);
+    }
 }
 
 /* ===================================
@@ -384,14 +398,14 @@ section {
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+    background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
     color: white;
-    box-shadow: var(--shadow-sm);
+    box-shadow: var(--glow-secondary);
 }
 
 .btn-primary:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: var(--glow);
+    transform: scale(1.04);
+    box-shadow: 0 6px 16px rgba(58, 142, 246, 0.5);
 }
 
 .btn-primary:disabled {
