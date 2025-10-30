@@ -27,23 +27,33 @@ let isAutoCapturing = false; // Track if auto-capture is active
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('🚀 Initializing Teachable Machine App...');
     
-    // Initialize TensorFlow.js backend with proper fallback
-    // This ensures compatibility with all devices and environments
-    await initializeTensorFlowBackend();
-    
-    // Load MobileNet model
-    await loadMobileNet();
-    
-    // Initialize event listeners
-    initializeEventListeners();
-    
-    // Initialize class data structure
-    initializeClassData();
-    
-    // Update statistics
-    updateStatistics();
-    
-    console.log('✅ App initialized successfully');
+    try {
+        // Initialize TensorFlow.js backend with proper fallback
+        // This ensures compatibility with all devices and environments
+        await initializeTensorFlowBackend();
+        
+        // Load MobileNet model - critical step
+        const mobilenetLoaded = await loadMobileNet();
+        
+        if (!mobilenetLoaded) {
+            console.error('❌ Failed to initialize app: MobileNet not loaded');
+            return; // Stop initialization
+        }
+        
+        // Initialize event listeners
+        initializeEventListeners();
+        
+        // Initialize class data structure
+        initializeClassData();
+        
+        // Update statistics
+        updateStatistics();
+        
+        console.log('✅ App initialized successfully');
+    } catch (error) {
+        console.error('❌ Failed to initialize app:', error);
+        // App initialization failed - user already notified by loadMobileNet
+    }
 });
 
 // ===================================
@@ -159,7 +169,7 @@ async function loadMobileNet(retries = 3) {
             statusElement.classList.add('ready');
             statusElement.classList.remove('training');
             console.log('✅ MobileNet loaded successfully');
-            return; // Success - exit function
+            return true; // Success - return true
             
         } catch (error) {
             console.error(`❌ Error loading MobileNet (attempt ${attempt}):`, error);
@@ -172,6 +182,9 @@ async function loadMobileNet(retries = 3) {
                 
                 // Show user-friendly error message
                 alert('فشل تحميل نموذج التعلم الآلي. يرجى:\n1. التحقق من اتصال الإنترنت\n2. إعادة تحميل الصفحة (F5)\n3. تجربة متصفح آخر إذا استمرت المشكلة');
+                
+                // Throw error to stop initialization
+                throw new Error('Failed to load MobileNet after ' + retries + ' attempts');
             } else {
                 // Wait before retrying (exponential backoff)
                 const waitTime = 1000 * attempt; // 1s, 2s, 3s
@@ -180,6 +193,8 @@ async function loadMobileNet(retries = 3) {
             }
         }
     }
+    
+    return false; // Failed - return false
 }
 
 // ===================================
