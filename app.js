@@ -63,37 +63,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function initializeTensorFlowBackend() {
     console.log('🔧 Initializing TensorFlow.js backend...');
     
-    // Force CPU backend for Replit environment to avoid WebGL issues
-    // Replit's headless environment doesn't support WebGL properly
-    const forceCPU = true;
+    // Try backends in order: WebGL -> CPU
+    // WebGL is faster and works better on Chrome/Safari
+    // CPU is the universal fallback
     
-    if (forceCPU) {
-        console.log('🔒 Forcing CPU backend for compatibility...');
-        try {
-            await tf.setBackend('cpu');
-            await tf.ready();
-            
-            // Test CPU backend with a more complex operation
-            const testTensor = tf.tensor2d([[1, 2], [3, 4]]);
-            const testResult = testTensor.square().sum();
-            const value = await testResult.data();
-            testTensor.dispose();
-            testResult.dispose();
-            
-            console.log('✅ Using CPU backend');
-            console.log(`📊 TensorFlow.js backend: ${tf.getBackend()}`);
-            console.log(`📊 Backend test result: ${value[0]} (expected: 30)`);
-            return;
-            
-        } catch (error) {
-            console.error('❌ CPU backend initialization failed:', error);
-            alert('فشل تهيئة TensorFlow.js. يرجى إعادة تحميل الصفحة.');
-            throw error;
-        }
-    }
-    
-    // Try WebGL first (for desktop/mobile browsers)
+    // Try WebGL first (best performance for both Chrome and Safari)
     try {
+        console.log('🎮 Trying WebGL backend (GPU acceleration)...');
         await tf.setBackend('webgl');
         await tf.ready();
         
@@ -115,11 +91,12 @@ async function initializeTensorFlowBackend() {
         
     } catch (error) {
         console.log('⚠️ WebGL backend failed:', error.message);
-        console.log('🔄 Switching to CPU backend...');
+        console.log('🔄 Falling back to CPU backend...');
     }
     
     // Fall back to CPU if WebGL fails
     try {
+        console.log('💻 Trying CPU backend...');
         await tf.setBackend('cpu');
         await tf.ready();
         
@@ -130,7 +107,7 @@ async function initializeTensorFlowBackend() {
         testTensor.dispose();
         testResult.dispose();
         
-        console.log('✅ Using CPU backend');
+        console.log('✅ Using CPU backend (fallback)');
         console.log(`📊 TensorFlow.js backend: ${tf.getBackend()}`);
         console.log(`📊 Backend test result: ${value[0]} (expected: 30)`);
         return;
