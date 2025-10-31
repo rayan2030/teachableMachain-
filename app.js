@@ -139,17 +139,19 @@ async function loadMobileNet(retries = 5) {
             statusElement.textContent = `جاري تحميل نموذج MobileNet... (${attempt}/${retries})`;
             console.log(`📥 Loading MobileNet model (attempt ${attempt}/${retries})...`);
             
-            // Create a timeout promise
+            // Create a timeout promise (120 seconds for slow connections)
             const timeoutPromise = new Promise((_, reject) => {
-                setTimeout(() => reject(new Error('Model loading timeout')), 60000); // 60 second timeout
+                setTimeout(() => reject(new Error('Model loading timeout after 120 seconds')), 120000);
             });
             
-            // Load MobileNet v1 model with alpha 0.5 (balanced: smaller but still accurate)
-            // This is lighter than v2 but still effective for transfer learning
+            // Load MobileNet v1 model with alpha 0.25 (smallest, fastest to load)
+            // This is the lightest model - best for slow connections
             const loadPromise = window.mobilenet.load({
                 version: 1,
-                alpha: 0.5 // Balanced model - 512 features
+                alpha: 0.25 // Smallest model - 256 features, ~1-2 MB
             });
+            
+            console.log(`⏳ Downloading model... This may take up to 2 minutes on slow connections.`);
             
             // Race between loading and timeout
             mobilenet = await Promise.race([loadPromise, timeoutPromise]);
@@ -374,13 +376,13 @@ async function extractFeatures(imageElement) {
     // Use MobileNet to extract features (activations from intermediate layer)
     // This uses transfer learning - we get rich feature representations
     // Use 'true' to get embeddings before the final classification layer
-    // This gives us shape [1, 512] for v1 alpha=0.5 (pooled features)
+    // This gives us shape [1, 256] for v1 alpha=0.25 (pooled features)
     const activation = mobilenet.infer(imageElement, true);
     
     console.log(`🔍 Feature shape from MobileNet: [${activation.shape.join(', ')}]`);
     
-    // MobileNet.infer with 'true' returns [1, 512] for v1 alpha=0.5 (already pooled)
-    // Remove batch dimension: [1, 512] -> [512]
+    // MobileNet.infer with 'true' returns [1, 256] for v1 alpha=0.25 (already pooled)
+    // Remove batch dimension: [1, 256] -> [256]
     const squeezed = activation.squeeze([0]);
     
     console.log(`🔍 After squeeze: [${squeezed.shape.join(', ')}]`);
@@ -850,9 +852,9 @@ function prepareTrainingData() {
                 return;
             }
             
-            // Check if feature has correct shape [512] for MobileNet v1 alpha=0.5
-            if (feature.shape.length !== 1 || feature.shape[0] !== 512) {
-                console.error(`❌ شكل الميزة خاطئ: [${feature.shape.join(', ')}] - المتوقع [512]`);
+            // Check if feature has correct shape [256] for MobileNet v1 alpha=0.25
+            if (feature.shape.length !== 1 || feature.shape[0] !== 256) {
+                console.error(`❌ شكل الميزة خاطئ: [${feature.shape.join(', ')}] - المتوقع [256]`);
                 console.error(`سيتم تخطي هذه الميزة. يرجى مسح البيانات وإعادة إضافة الصور.`);
                 return;
             }
@@ -888,9 +890,9 @@ function buildModel(inputShape) {
     const model = tf.sequential();
     
     // Input layer for pooled MobileNet features
-    // MobileNet v1 alpha=0.5 produces features of shape [512]
+    // MobileNet v1 alpha=0.25 produces features of shape [256]
     model.add(tf.layers.dense({
-        inputShape: [512],
+        inputShape: [256],
         units: 128,
         activation: 'relu',
         kernelInitializer: 'heNormal'
