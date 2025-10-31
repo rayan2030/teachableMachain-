@@ -397,13 +397,13 @@ async function extractFeatures(imageElement) {
     // Use MobileNet to extract features (activations from intermediate layer)
     // This uses transfer learning - we get rich feature representations
     // Use 'true' to get embeddings before the final classification layer
-    // This gives us shape [1, 1280] which is the pooled features
+    // This gives us shape [1, 512] for v1 alpha=0.5 (pooled features)
     const activation = mobilenet.infer(imageElement, true);
     
     console.log(`🔍 Feature shape from MobileNet: [${activation.shape.join(', ')}]`);
     
-    // MobileNet.infer with 'true' returns [1, 1280] (already pooled)
-    // Remove batch dimension: [1, 1280] -> [1280]
+    // MobileNet.infer with 'true' returns [1, 512] for v1 alpha=0.5 (already pooled)
+    // Remove batch dimension: [1, 512] -> [512]
     const squeezed = activation.squeeze([0]);
     
     console.log(`🔍 After squeeze: [${squeezed.shape.join(', ')}]`);
@@ -873,9 +873,9 @@ function prepareTrainingData() {
                 return;
             }
             
-            // Check if feature has correct shape [1280]
-            if (feature.shape.length !== 1 || feature.shape[0] !== 1280) {
-                console.error(`❌ شكل الميزة خاطئ: [${feature.shape.join(', ')}] - المتوقع [1280]`);
+            // Check if feature has correct shape [512] for MobileNet v1 alpha=0.5
+            if (feature.shape.length !== 1 || feature.shape[0] !== 512) {
+                console.error(`❌ شكل الميزة خاطئ: [${feature.shape.join(', ')}] - المتوقع [512]`);
                 console.error(`سيتم تخطي هذه الميزة. يرجى مسح البيانات وإعادة إضافة الصور.`);
                 return;
             }
