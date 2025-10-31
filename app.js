@@ -146,25 +146,36 @@ async function initializeTensorFlowBackend() {
 // Load Pre-trained MobileNet Model
 // ===================================
 
-async function loadMobileNet(retries = 3) {
+async function loadMobileNet(retries = 5) {
     const statusElement = document.getElementById('modelStatus');
+    
+    // First check if library is loaded
+    if (!window.mobilenet) {
+        statusElement.textContent = 'خطأ: مكتبة MobileNet غير محملة';
+        statusElement.style.color = 'var(--error)';
+        alert('فشل تحميل مكتبة MobileNet من الإنترنت.\nيرجى التحقق من اتصال الإنترنت وإعادة تحميل الصفحة.');
+        throw new Error('MobileNet library not loaded from CDN');
+    }
     
     for (let attempt = 1; attempt <= retries; attempt++) {
         try {
             statusElement.textContent = `جاري تحميل نموذج MobileNet... (${attempt}/${retries})`;
             console.log(`📥 Loading MobileNet model (attempt ${attempt}/${retries})...`);
             
-            // Check if mobilenet library is loaded
-            if (!window.mobilenet) {
-                throw new Error('MobileNet library not loaded from CDN');
-            }
-            
-            // Load MobileNet v1 model with alpha 0.25 (smaller, faster to load)
-            // This is lighter but still effective for transfer learning
-            mobilenet = await window.mobilenet.load({
-                version: 1,
-                alpha: 0.25 // Smaller model for faster loading
+            // Create a timeout promise
+            const timeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => reject(new Error('Model loading timeout')), 60000); // 60 second timeout
             });
+            
+            // Load MobileNet v1 model with alpha 0.5 (balanced: smaller but still accurate)
+            // This is lighter than v2 but still effective for transfer learning
+            const loadPromise = window.mobilenet.load({
+                version: 1,
+                alpha: 0.5 // Balanced model - 512 features
+            });
+            
+            // Race between loading and timeout
+            mobilenet = await Promise.race([loadPromise, timeoutPromise]);
             
             statusElement.textContent = 'النموذج جاهز للاستخدام ✓';
             statusElement.classList.add('ready');
@@ -182,13 +193,13 @@ async function loadMobileNet(retries = 3) {
                 statusElement.classList.remove('ready', 'training');
                 
                 // Show user-friendly error message
-                alert('فشل تحميل نموذج التعلم الآلي. يرجى:\n1. التحقق من اتصال الإنترنت\n2. إعادة تحميل الصفحة (F5)\n3. تجربة متصفح آخر إذا استمرت المشكلة');
+                alert('فشل تحميل نموذج التعلم الآلي بعد ' + retries + ' محاولات.\n\nيرجى:\n1. التحقق من اتصال الإنترنت\n2. إعادة تحميل الصفحة (F5)\n3. الانتظار قليلاً ثم المحاولة مرة أخرى\n4. تجربة متصفح آخر إذا استمرت المشكلة');
                 
                 // Throw error to stop initialization
                 throw new Error('Failed to load MobileNet after ' + retries + ' attempts');
             } else {
-                // Wait before retrying (exponential backoff)
-                const waitTime = 1000 * attempt; // 1s, 2s, 3s
+                // Wait before retrying with longer backoff
+                const waitTime = 2000 * attempt; // 2s, 4s, 6s, 8s, 10s
                 console.log(`⏳ Retrying in ${waitTime}ms...`);
                 await new Promise(resolve => setTimeout(resolve, waitTime));
             }
@@ -900,9 +911,9 @@ function buildModel(inputShape) {
     const model = tf.sequential();
     
     // Input layer for pooled MobileNet features
-    // MobileNet v1 alpha=0.25 produces features of shape [256]
+    // MobileNet v1 alpha=0.5 produces features of shape [512]
     model.add(tf.layers.dense({
-        inputShape: [256],
+        inputShape: [512],
         units: 128,
         activation: 'relu',
         kernelInitializer: 'heNormal'
